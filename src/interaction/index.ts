@@ -1,4 +1,5 @@
 export { createInteractionPort, type InteractionMode } from './factory.js';
+export type { TtyReadable, TtyWritable } from './factory.js';
 export { InquirerInteractionPort, type InquirerPromptFunctions } from './inquirer.js';
 export { NonTtyInteractionPort } from './non-tty.js';
 export type {

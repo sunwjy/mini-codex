@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import { pathToFileURL } from 'node:url';
-import { createInteractionPort } from '../interaction/index.js';
+import { createRenderer } from '../render/index.js';
 
 const VERSION = '0.1.0';
 
@@ -22,12 +22,16 @@ export function createProgram(): Command {
         return;
       }
 
-      const mode = options.tui ? 'tui' : 'plain';
-      const interaction = createInteractionPort({ mode: options.tui ? 'auto' : 'plain' });
+      const renderer = createRenderer({ mode: options.tui ? 'auto' : 'plain' });
+      const mode = renderer.kind === 'ink' ? 'tui' : 'plain';
 
-      await interaction.write({ content: `mini-codex ${VERSION} (${mode})`, role: 'system' });
-      await interaction.write({ content: `Prompt: ${prompt}`, role: 'system' });
-      await interaction.write({ content: 'Agent loop is not implemented yet.', role: 'system' });
+      await renderer.render({
+        messages: [{ content: 'Agent loop is not implemented yet.', role: 'system' }],
+        mode,
+        prompt,
+        status: 'ready',
+        title: `mini-codex ${VERSION}`,
+      });
     });
 
   return program;

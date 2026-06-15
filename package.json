@@ -22,11 +22,14 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^8.5.2",
-    "commander": "^15.0.0"
+    "commander": "^15.0.0",
+    "ink": "^7.0.6",
+    "react": "^19.2.7"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.0",
     "@types/node": "^25.0.3",
+    "@types/react": "^19.2.17",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.15"
