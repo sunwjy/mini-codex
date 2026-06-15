@@ -1,0 +1,82 @@
+import { randomUUID } from 'node:crypto';
+
+export const TRANSCRIPT_SCHEMA_VERSION = 1;
+
+export type AgentEventType =
+  | 'transcript.schema'
+  | 'thread.started'
+  | 'turn.started'
+  | 'turn.completed'
+  | 'turn.failed'
+  | 'item.started'
+  | 'item.completed'
+  | 'agent.message.delta'
+  | 'tool.call.started'
+  | 'tool.call.completed'
+  | 'tool.call.failed';
+
+export interface AgentEvent<TData = unknown> {
+  id: string;
+  type: AgentEventType;
+  timestamp: string;
+  threadId: string;
+  turnId?: string;
+  itemId?: string;
+  data?: TData;
+}
+
+export interface TranscriptSchemaData {
+  schemaVersion: number;
+}
+
+export type TranscriptSchemaEvent = AgentEvent<TranscriptSchemaData> & {
+  type: 'transcript.schema';
+};
+
+export interface CreateEventInput<TData = unknown> {
+  type: Exclude<AgentEventType, 'transcript.schema'>;
+  threadId: string;
+  turnId?: string;
+  itemId?: string;
+  data?: TData;
+  idFactory?: () => string;
+  now?: () => Date;
+}
+
+export function createEvent<TData = unknown>(input: CreateEventInput<TData>): AgentEvent<TData> {
+  const event: AgentEvent<TData> = {
+    id: input.idFactory?.() ?? randomUUID(),
+    type: input.type,
+    timestamp: (input.now?.() ?? new Date()).toISOString(),
+    threadId: input.threadId,
+  };
+
+  if (input.turnId !== undefined) {
+    event.turnId = input.turnId;
+  }
+
+  if (input.itemId !== undefined) {
+    event.itemId = input.itemId;
+  }
+
+  if (input.data !== undefined) {
+    event.data = input.data;
+  }
+
+  return event;
+}
+
+export function createTranscriptSchemaEvent(
+  threadId: string,
+  options: Pick<CreateEventInput, 'idFactory' | 'now'> = {},
+): TranscriptSchemaEvent {
+  return {
+    id: options.idFactory?.() ?? randomUUID(),
+    type: 'transcript.schema',
+    timestamp: (options.now?.() ?? new Date()).toISOString(),
+    threadId,
+    data: {
+      schemaVersion: TRANSCRIPT_SCHEMA_VERSION,
+    },
+  };
+}
