@@ -1,0 +1,31 @@
+import { loadAgentInstructions } from '../instructions/agents.js';
+import { listFiles } from '../tools/read-only.js';
+
+export interface ProjectContextInput {
+  workspaceRoot: string;
+  cwd?: string;
+  maxFiles?: number;
+}
+
+export interface ProjectContext {
+  files: string[];
+  instructions: Array<{
+    path: string;
+    content: string;
+  }>;
+}
+
+export async function buildProjectContext(input: ProjectContextInput): Promise<ProjectContext> {
+  const [files, instructions] = await Promise.all([
+    listFiles({
+      ...(input.maxFiles === undefined ? {} : { maxEntries: input.maxFiles }),
+      workspaceRoot: input.workspaceRoot,
+    }),
+    loadAgentInstructions({
+      ...(input.cwd === undefined ? {} : { cwd: input.cwd }),
+      workspaceRoot: input.workspaceRoot,
+    }),
+  ]);
+
+  return { files, instructions };
+}
