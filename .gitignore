@@ -1,4 +1,5 @@
 .omx/
+.mini-codex/
 node_modules/
 .pnpm-store/
 dist/

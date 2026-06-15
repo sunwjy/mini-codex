@@ -7,4 +7,14 @@ describe('createProgram', () => {
 
     expect(program.name()).toBe('mini-codex');
   });
+
+  it('registers session management commands', () => {
+    const program = createProgram();
+
+    expect(program.commands.map((command) => command.name()).sort()).toEqual([
+      'compact',
+      'resume',
+      'status',
+    ]);
+  });
 });

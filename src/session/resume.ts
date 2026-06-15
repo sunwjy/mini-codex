@@ -1,0 +1,26 @@
+import type { JsonlTranscriptStore } from '../transcript/jsonl-store.js';
+import { compactTranscript, type CompactedTranscript } from './compact.js';
+import { summarizeThreadEvents, type ThreadStatus } from './status.js';
+
+export interface ResumeThreadInput {
+  store: JsonlTranscriptStore;
+  threadId: string;
+  maxEvents?: number;
+}
+
+export interface ResumeThreadResult {
+  status: ThreadStatus;
+  compacted: CompactedTranscript;
+}
+
+export async function resumeThread(input: ResumeThreadInput): Promise<ResumeThreadResult> {
+  const events = await input.store.read(input.threadId);
+
+  return {
+    compacted: compactTranscript({
+      events,
+      ...(input.maxEvents === undefined ? {} : { maxEvents: input.maxEvents }),
+    }),
+    status: summarizeThreadEvents(events),
+  };
+}
