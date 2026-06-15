@@ -2,8 +2,8 @@ import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   type AgentEvent,
-  TRANSCRIPT_SCHEMA_VERSION,
   createTranscriptSchemaEvent,
+  TRANSCRIPT_SCHEMA_VERSION,
 } from '../core/events.js';
 
 export class TranscriptParseError extends Error {
@@ -44,7 +44,15 @@ export class JsonlTranscriptStore {
     const path = this.pathForThread(threadId);
     const schemaEvent = createTranscriptSchemaEvent(threadId);
 
-    await writeFile(path, `${JSON.stringify(schemaEvent)}\n`, { flag: 'wx' });
+    try {
+      await writeFile(path, `${JSON.stringify(schemaEvent)}\n`, { flag: 'wx' });
+    } catch (error) {
+      if (!isAlreadyExistsError(error)) {
+        throw error;
+      }
+
+      await this.read(threadId);
+    }
 
     return path;
   }
@@ -121,6 +129,15 @@ function isAgentEvent(value: unknown): value is AgentEvent {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isAlreadyExistsError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: unknown }).code === 'EEXIST'
+  );
 }
 
 function assertSafeThreadId(threadId: string): void {

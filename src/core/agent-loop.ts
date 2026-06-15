@@ -1,6 +1,6 @@
-import { type AgentEvent, createEvent } from './events.js';
 import type { ModelMessage, ModelProvider } from '../model/types.js';
 import type { JsonlTranscriptStore } from '../transcript/jsonl-store.js';
+import { type AgentEvent, createEvent } from './events.js';
 
 export interface AgentLoopOptions {
   model: ModelProvider;

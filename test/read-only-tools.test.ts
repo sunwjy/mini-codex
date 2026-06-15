@@ -1,7 +1,7 @@
+import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { WorkspacePathError } from '../src/safety/workspace.js';
 import { listFiles, readWorkspaceFile, searchWorkspace } from '../src/tools/read-only.js';

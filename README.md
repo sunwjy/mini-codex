@@ -22,6 +22,10 @@ The project starts with a small CLI shell and grows toward a local coding agent
 with typed events, a transcript store, read-only tools, approvals, and an Ink
 TUI.
 
+The root prompt command currently renders a static placeholder run view. The
+agent loop and tool execution layers are available as modules, but they are not
+yet wired into the root prompt command.
+
 ## CLI
 
 ```sh

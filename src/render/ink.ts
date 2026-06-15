@@ -1,5 +1,5 @@
-import { Box, render, renderToString, Text } from 'ink';
 import type { Instance, RenderOptions, RenderToStringOptions } from 'ink';
+import { Box, render, renderToString, Text } from 'ink';
 import React from 'react';
 import type { AgentRenderer, AgentRunStatus, AgentRunView, RenderMessageRole } from './types.js';
 

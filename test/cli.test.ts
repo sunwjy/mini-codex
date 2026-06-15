@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createProgram } from '../src/cli/index.js';
+import { createProgram, PLACEHOLDER_AGENT_MESSAGE } from '../src/cli/index.js';
 
 describe('createProgram', () => {
   it('configures the mini-codex command name', () => {
@@ -16,5 +16,9 @@ describe('createProgram', () => {
       'resume',
       'status',
     ]);
+  });
+
+  it('documents the root prompt path as a placeholder contract', () => {
+    expect(PLACEHOLDER_AGENT_MESSAGE).toBe('Agent loop is not implemented yet.');
   });
 });

@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
-import { resolveWorkspacePath } from '../safety/workspace.js';
 import type { InteractionPort } from '../interaction/index.js';
+import { resolveWorkspacePath } from '../safety/workspace.js';
 
 export type ShellPolicyDecision = 'allow' | 'ask' | 'deny';
 
@@ -27,6 +27,7 @@ export interface ExecuteShellCommandInput {
   args?: string[];
   cwd?: string;
   timeoutMs?: number;
+  killGraceMs?: number;
   maxOutputBytes?: number;
   policy?: ShellPolicy;
   approval?: ShellApprovalPort;
@@ -109,6 +110,7 @@ export async function executeShellCommand(
     command: input.command,
     cwd: cwdPath.absolutePath,
     displayCwd: cwdPath.projectPath,
+    killGraceMs: input.killGraceMs ?? 500,
     maxOutputBytes: input.maxOutputBytes ?? 64 * 1024,
     timeoutMs: input.timeoutMs ?? 30_000,
   });
@@ -151,6 +153,7 @@ interface SpawnWithLimitsInput {
   cwd: string;
   displayCwd: string;
   timeoutMs: number;
+  killGraceMs: number;
   maxOutputBytes: number;
 }
 
@@ -164,10 +167,16 @@ function spawnWithLimits(input: SpawnWithLimitsInput): Promise<ShellCommandResul
   const stdout = createBoundedBuffer(input.maxOutputBytes);
   const stderr = createBoundedBuffer(input.maxOutputBytes);
   let timedOut = false;
+  let killTimeout: NodeJS.Timeout | undefined;
 
   const timeout = setTimeout(() => {
     timedOut = true;
     child.kill('SIGTERM');
+    killTimeout = setTimeout(() => {
+      if (child.exitCode === null && child.signalCode === null) {
+        child.kill('SIGKILL');
+      }
+    }, input.killGraceMs);
   }, input.timeoutMs);
 
   child.stdout.on('data', (chunk: Buffer) => stdout.append(chunk));
@@ -175,12 +184,12 @@ function spawnWithLimits(input: SpawnWithLimitsInput): Promise<ShellCommandResul
 
   return new Promise((resolve, reject) => {
     child.on('error', (error) => {
-      clearTimeout(timeout);
+      clearShellTimers(timeout, killTimeout);
       reject(error);
     });
 
     child.on('close', (exitCode, signal) => {
-      clearTimeout(timeout);
+      clearShellTimers(timeout, killTimeout);
       resolve({
         command: [input.command, ...input.args],
         cwd: input.displayCwd,
@@ -195,6 +204,14 @@ function spawnWithLimits(input: SpawnWithLimitsInput): Promise<ShellCommandResul
       });
     });
   });
+}
+
+function clearShellTimers(timeout: NodeJS.Timeout, killTimeout: NodeJS.Timeout | undefined): void {
+  clearTimeout(timeout);
+
+  if (killTimeout) {
+    clearTimeout(killTimeout);
+  }
 }
 
 function createBoundedBuffer(maxBytes: number): {

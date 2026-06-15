@@ -5,6 +5,6 @@ export type {
   AgentRenderer,
   AgentRunStatus,
   AgentRunView,
-  RenderMessage,
   RendererKind,
+  RenderMessage,
 } from './types.js';

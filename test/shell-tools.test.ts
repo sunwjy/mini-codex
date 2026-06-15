@@ -1,5 +1,5 @@
-import { mkdir, realpath } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
+import { mkdir, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -7,8 +7,8 @@ import { WorkspacePathError } from '../src/safety/workspace.js';
 import {
   decideShellPolicy,
   executeShellCommand,
-  ShellPolicyError,
   type ShellApprovalPort,
+  ShellPolicyError,
 } from '../src/tools/shell.js';
 
 describe('decideShellPolicy', () => {
@@ -111,6 +111,26 @@ describe('executeShellCommand', () => {
     });
 
     expect(result.timedOut).toBe(true);
+  });
+
+  it('force kills commands that ignore SIGTERM after timeout', async () => {
+    const root = await fixtureWorkspace();
+
+    const result = await executeShellCommand({
+      args: [
+        '-e',
+        'process.on("SIGTERM", () => { process.stdout.write("ignored"); }); process.stdout.write("ready"); setInterval(() => {}, 1000);',
+      ],
+      command: process.execPath,
+      killGraceMs: 25,
+      policy: { allowPrefixes: [[process.execPath]] },
+      timeoutMs: 100,
+      workspaceRoot: root,
+    });
+
+    expect(result.timedOut).toBe(true);
+    expect(result.stdout).toContain('ignored');
+    expect(result.signal).toBe('SIGKILL');
   });
 
   it('rejects cwd outside the workspace', async () => {

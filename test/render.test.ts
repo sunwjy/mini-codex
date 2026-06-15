@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { NonTtyInteractionPort } from '../src/interaction/index.js';
-import { createRenderer, PlainRenderer, renderInkViewToString } from '../src/render/index.js';
 import type { AgentRunView } from '../src/render/index.js';
+import { createRenderer, PlainRenderer, renderInkViewToString } from '../src/render/index.js';
 
 class MemoryOutput {
   readonly chunks: string[] = [];

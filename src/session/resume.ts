@@ -1,5 +1,5 @@
 import type { JsonlTranscriptStore } from '../transcript/jsonl-store.js';
-import { compactTranscript, type CompactedTranscript } from './compact.js';
+import { type CompactedTranscript, compactTranscript } from './compact.js';
 import { summarizeThreadEvents, type ThreadStatus } from './status.js';
 
 export interface ResumeThreadInput {

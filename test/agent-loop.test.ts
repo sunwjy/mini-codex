@@ -53,6 +53,26 @@ describe('AgentLoop', () => {
       type: 'turn.failed',
     });
   });
+
+  it('can append multiple turns to the same thread transcript', async () => {
+    const loop = createLoop(new FakeModelProvider({ chunks: ['ok'] }));
+
+    await loop.runTurn({
+      prompt: 'First',
+      threadId: 'thread-3',
+      turnId: 'turn-1',
+    });
+    await loop.runTurn({
+      prompt: 'Second',
+      threadId: 'thread-3',
+      turnId: 'turn-2',
+    });
+
+    const transcriptEvents = await loop.transcriptStore.read('thread-3');
+
+    expect(transcriptEvents.filter((event) => event.type === 'transcript.schema')).toHaveLength(1);
+    expect(transcriptEvents.filter((event) => event.type === 'turn.completed')).toHaveLength(2);
+  });
 });
 
 function createLoop(model: FakeModelProvider): AgentLoop {

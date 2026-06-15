@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
-import { resolveWorkspacePath } from '../safety/workspace.js';
 import type { RendererMode } from '../render/index.js';
+import { resolveWorkspacePath } from '../safety/workspace.js';
 import type { ShellPolicyDecision } from '../tools/shell.js';
 
 export interface MiniCodexConfig {

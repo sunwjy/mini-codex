@@ -1,5 +1,5 @@
-export { compactTranscript, type CompactedTranscript } from './compact.js';
-export { resumeThread, type ResumeThreadResult } from './resume.js';
+export { type CompactedTranscript, compactTranscript } from './compact.js';
+export { type ResumeThreadResult, resumeThread } from './resume.js';
 export {
   listThreadStatuses,
   readThreadStatus,

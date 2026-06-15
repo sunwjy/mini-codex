@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-import { Command } from 'commander';
 import { pathToFileURL } from 'node:url';
+import { Command } from 'commander';
 import { createRenderer } from '../render/index.js';
 import { addSessionCommands } from './session-commands.js';
 
 const VERSION = '0.1.0';
+export const PLACEHOLDER_AGENT_MESSAGE = 'Agent loop is not implemented yet.';
 
 export function createProgram(): Command {
   const program = new Command();
@@ -28,7 +29,7 @@ export function createProgram(): Command {
       const mode = renderer.kind === 'ink' ? 'tui' : 'plain';
 
       await renderer.render({
-        messages: [{ content: 'Agent loop is not implemented yet.', role: 'system' }],
+        messages: [{ content: PLACEHOLDER_AGENT_MESSAGE, role: 'system' }],
         mode,
         prompt,
         status: 'ready',
