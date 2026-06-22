@@ -5,6 +5,7 @@ export interface PlainRendererOptions {
   interaction: InteractionPort;
 }
 
+/** Line-oriented renderer suitable for logs, pipes, and redirected output. */
 export class PlainRenderer implements AgentRenderer {
   readonly kind = 'plain';
   readonly interaction: InteractionPort;

@@ -45,6 +45,7 @@ export class PatchToolError extends Error {
   }
 }
 
+/** Computes the resulting content and unified diff without modifying the filesystem. */
 export async function previewPatch(input: PreviewPatchInput): Promise<PatchPreview> {
   const target = resolveWorkspacePath(input.workspaceRoot, input.operation.path);
   const before = await readExistingFile(target.absolutePath);
@@ -61,14 +62,17 @@ export async function previewPatch(input: PreviewPatchInput): Promise<PatchPrevi
   };
 }
 
+/** Applies a previously previewable operation and reports whether bytes were written. */
 export async function applyPatch(input: PreviewPatchInput): Promise<PatchApplyResult> {
   const target = resolveWorkspacePath(input.workspaceRoot, input.operation.path);
   const preview = await previewPatch(input);
 
+  // Preserve timestamps and avoid unnecessary writes for idempotent operations.
   if (!preview.changed) {
     return { ...preview, applied: false };
   }
 
+  // Parent creation is deferred until a real change is known to be necessary.
   await mkdir(dirname(target.absolutePath), { recursive: true });
   await writeFile(target.absolutePath, preview.after, 'utf8');
 
@@ -79,6 +83,7 @@ async function readExistingFile(path: string): Promise<string> {
   try {
     return await readFile(path, 'utf8');
   } catch (error) {
+    // Missing files are valid inputs for write operations and are represented as empty content.
     if (isNotFoundError(error)) {
       return '';
     }
@@ -92,6 +97,7 @@ function nextContent(operation: PatchOperation, before: string): string {
     return operation.content;
   }
 
+  // Replace operations require an existing target; only writes may create a new file.
   if (before.length === 0) {
     throw new PatchToolError(
       'missing-file',
@@ -103,6 +109,7 @@ function nextContent(operation: PatchOperation, before: string): string {
     throw new PatchToolError('empty-search', 'Replace operation search text cannot be empty');
   }
 
+  // Fail explicitly rather than returning an unchanged preview for a stale search fragment.
   if (!before.includes(operation.search)) {
     throw new PatchToolError('missing-search', `Search text was not found in ${operation.path}`);
   }

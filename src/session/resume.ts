@@ -13,6 +13,7 @@ export interface ResumeThreadResult {
   compacted: CompactedTranscript;
 }
 
+/** Loads a persisted thread and returns both its current status and resume context. */
 export async function resumeThread(input: ResumeThreadInput): Promise<ResumeThreadResult> {
   const events = await input.store.read(input.threadId);
 

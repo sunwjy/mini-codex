@@ -56,6 +56,7 @@ export class ShellPolicyError extends Error {
   }
 }
 
+/** Adapts the generic interaction port to the shell approval boundary. */
 export function createInteractionShellApprovalPort(
   interaction: InteractionPort,
 ): ShellApprovalPort {
@@ -68,6 +69,7 @@ export function createInteractionShellApprovalPort(
   };
 }
 
+/** Executes a policy-approved command without invoking a shell interpreter. */
 export async function executeShellCommand(
   input: ExecuteShellCommandInput,
 ): Promise<ShellCommandResult> {
@@ -76,6 +78,7 @@ export async function executeShellCommand(
   const cwdPath = resolveWorkspacePath(input.workspaceRoot, input.cwd ?? '.');
   const decision = decideShellPolicy(command, input.policy);
 
+  // Denied commands never reach either the approval UI or the process launcher.
   if (decision === 'deny') {
     throw new ShellPolicyError(
       'policy-denied',
@@ -84,6 +87,7 @@ export async function executeShellCommand(
   }
 
   if (decision === 'ask') {
+    // Treat a missing approval adapter as a hard failure rather than silently allowing execution.
     if (!input.approval) {
       throw new ShellPolicyError(
         'approval-required',
@@ -116,10 +120,12 @@ export async function executeShellCommand(
   });
 }
 
+/** Evaluates command prefixes with deny-first precedence and a conservative default. */
 export function decideShellPolicy(
   command: string[],
   policy: ShellPolicy = {},
 ): ShellPolicyDecision {
+  // Evaluate restrictive rules first so broader allow prefixes cannot override them.
   if (matchesAnyPrefix(command, policy.denyPrefixes ?? [])) {
     return 'deny';
   }
@@ -171,8 +177,10 @@ function spawnWithLimits(input: SpawnWithLimitsInput): Promise<ShellCommandResul
 
   const timeout = setTimeout(() => {
     timedOut = true;
+    // Give cooperative processes time to exit before forcing termination.
     child.kill('SIGTERM');
     killTimeout = setTimeout(() => {
+      // Escalate only if the child is still alive after the configured grace period.
       if (child.exitCode === null && child.signalCode === null) {
         child.kill('SIGKILL');
       }
@@ -227,6 +235,7 @@ function createBoundedBuffer(maxBytes: number): {
       return truncated;
     },
     append(chunk: Buffer) {
+      // Once the cap is reached, discard later chunks without reallocating the buffer.
       if (buffer.length >= maxBytes) {
         truncated = true;
         return;
@@ -234,6 +243,7 @@ function createBoundedBuffer(maxBytes: number): {
 
       const next = Buffer.concat([buffer, chunk]);
       if (next.length > maxBytes) {
+        // Preserve the leading output, which commonly contains the primary diagnostic.
         buffer = next.subarray(0, maxBytes);
         truncated = true;
         return;

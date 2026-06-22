@@ -16,17 +16,20 @@ export interface WorkspacePath {
   projectPath: string;
 }
 
+/** Resolves a user-supplied path while enforcing the workspace boundary. */
 export function resolveWorkspacePath(workspaceRoot: string, requestedPath: string): WorkspacePath {
   const root = resolve(workspaceRoot);
   const absolutePath = resolve(root, requestedPath);
   const relativePath = relative(root, absolutePath);
 
+  // Reject lexical traversal before touching the filesystem or resolving canonical paths.
   if (escapesRoot(relativePath)) {
     throw new WorkspacePathError(root, requestedPath);
   }
 
   assertCanonicalWorkspacePath(root, absolutePath, relativePath, requestedPath);
 
+  // Represent the workspace root consistently instead of exposing an empty project path.
   if (relativePath === '') {
     return { absolutePath, projectPath: '.' };
   }
@@ -63,6 +66,7 @@ function assertCanonicalWorkspacePath(
     try {
       stats = lstatSync(currentPath);
     } catch (error) {
+      // Stop canonical traversal at the first missing component; the suffix is checked below.
       if (isNotFoundError(error)) {
         break;
       }
@@ -71,14 +75,17 @@ function assertCanonicalWorkspacePath(
     }
 
     if (stats.isSymbolicLink()) {
+      // Reject symlinks outright so a later filesystem operation cannot escape the workspace.
       throw new WorkspacePathError(root, requestedPath);
     }
 
     if (escapesRoot(relative(rootRealPath, realpathSync(currentPath)))) {
+      // Existing path components must resolve under the canonical workspace root.
       throw new WorkspacePathError(root, requestedPath);
     }
   }
 
+  // Also validate the unresolved suffix when the requested path does not exist yet.
   if (escapesRoot(relative(rootRealPath, resolve(rootRealPath, relative(root, absolutePath))))) {
     throw new WorkspacePathError(root, requestedPath);
   }

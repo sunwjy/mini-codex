@@ -15,6 +15,7 @@ export interface ThreadStatus {
   finalMessage?: string;
 }
 
+/** Reads and summarizes a single persisted thread. */
 export async function readThreadStatus(
   store: JsonlTranscriptStore,
   threadId: string,
@@ -22,12 +23,14 @@ export async function readThreadStatus(
   return summarizeThreadEvents(await store.read(threadId));
 }
 
+/** Lists transcript-backed thread summaries in deterministic thread-id order. */
 export async function listThreadStatuses(store: JsonlTranscriptStore): Promise<ThreadStatus[]> {
   let fileNames: string[];
 
   try {
     fileNames = await readdir(store.directory);
   } catch (error) {
+    // An uninitialized transcript directory is equivalent to an empty session list.
     if (isNotFoundError(error)) {
       return [];
     }
@@ -48,6 +51,7 @@ export async function listThreadStatuses(store: JsonlTranscriptStore): Promise<T
   return statuses;
 }
 
+/** Derives a thread's externally visible status from its ordered event stream. */
 export function summarizeThreadEvents(events: AgentEvent[]): ThreadStatus {
   const [first] = events;
   const last = events.at(-1);
@@ -76,6 +80,7 @@ export function summarizeThreadEvents(events: AgentEvent[]): ThreadStatus {
 }
 
 function statusFromLastEvent(event: AgentEvent): ThreadRunStatus {
+  // Status reflects the durable tail event rather than an inferred in-memory lifecycle.
   if (event.type === 'turn.completed') {
     return 'completed';
   }
@@ -84,6 +89,7 @@ function statusFromLastEvent(event: AgentEvent): ThreadRunStatus {
     return 'failed';
   }
 
+  // A started turn or persisted delta indicates work that has not reached a terminal event.
   if (event.type === 'agent.message.delta' || event.type === 'turn.started') {
     return 'running';
   }

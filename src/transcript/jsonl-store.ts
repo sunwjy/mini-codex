@@ -32,6 +32,7 @@ export interface JsonlTranscriptStoreOptions {
   directory: string;
 }
 
+/** Persists append-only agent event streams as one JSON object per line. */
 export class JsonlTranscriptStore {
   readonly directory: string;
 
@@ -45,12 +46,14 @@ export class JsonlTranscriptStore {
     const schemaEvent = createTranscriptSchemaEvent(threadId);
 
     try {
+      // Exclusive creation prevents concurrent initializers from replacing an existing transcript.
       await writeFile(path, `${JSON.stringify(schemaEvent)}\n`, { flag: 'wx' });
     } catch (error) {
       if (!isAlreadyExistsError(error)) {
         throw error;
       }
 
+      // An existing file is reusable only when it is parseable and schema-compatible.
       await this.read(threadId);
     }
 
@@ -141,6 +144,7 @@ function isAlreadyExistsError(error: unknown): boolean {
 }
 
 function assertSafeThreadId(threadId: string): void {
+  // Thread identifiers become filenames, so separators and control characters are forbidden.
   if (!/^[a-zA-Z0-9._:-]+$/.test(threadId)) {
     throw new Error(`Unsafe thread id: ${threadId}`);
   }

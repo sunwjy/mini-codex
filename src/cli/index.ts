@@ -5,8 +5,11 @@ import { createRenderer } from '../render/index.js';
 import { addSessionCommands } from './session-commands.js';
 
 const VERSION = '0.1.0';
+
+/** Message rendered until the interactive agent loop is wired into the CLI. */
 export const PLACEHOLDER_AGENT_MESSAGE = 'Agent loop is not implemented yet.';
 
+/** Builds the CLI command tree without parsing arguments. */
 export function createProgram(): Command {
   const program = new Command();
 
@@ -40,10 +43,12 @@ export function createProgram(): Command {
   return program;
 }
 
+/** Parses CLI arguments and runs the selected command. */
 export async function main(argv = process.argv): Promise<void> {
   await createProgram().parseAsync(argv);
 }
 
+// Avoid executing the CLI when this module is imported by tests or other entry points.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   await main();
 }

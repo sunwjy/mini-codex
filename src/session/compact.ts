@@ -13,6 +13,7 @@ export interface CompactedTranscript {
   recentEvents: AgentEvent[];
 }
 
+/** Retains the newest events and derives a small, human-readable resume summary. */
 export function compactTranscript(input: CompactTranscriptInput): CompactedTranscript {
   const maxEvents = input.maxEvents ?? 40;
   const [first] = input.events;
@@ -34,6 +35,7 @@ export function compactTranscript(input: CompactTranscriptInput): CompactedTrans
 }
 
 function summarizeForResume(events: AgentEvent[], omittedEventCount: number): string {
+  // The summary intentionally captures only the latest turn outcomes, not arbitrary event data.
   const prompts = findStringData(events, 'turn.started', 'prompt');
   const completions = findStringData(events, 'turn.completed', 'finalMessage');
   const failures = findStringData(events, 'turn.failed', 'message');

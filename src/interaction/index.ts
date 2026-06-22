@@ -1,3 +1,4 @@
+// Expose interaction contracts and adapters through a stable public entry point.
 export type { TtyReadable, TtyWritable } from './factory.js';
 export { createInteractionPort, type InteractionMode } from './factory.js';
 export { InquirerInteractionPort, type InquirerPromptFunctions } from './inquirer.js';

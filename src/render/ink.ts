@@ -10,6 +10,7 @@ export interface InkRendererOptions {
   renderInk?: typeof render;
 }
 
+/** Full-screen-style terminal renderer backed by Ink. */
 export class InkRenderer implements AgentRenderer {
   readonly kind = 'ink';
   readonly options: InkRendererOptions;
@@ -28,12 +29,14 @@ export class InkRenderer implements AgentRenderer {
     };
     const instance: Instance = renderInk(renderInkView(view), renderOptions);
 
+    // Flush before unmounting so one-shot CLI invocations do not lose their final frame.
     await instance.waitUntilRenderFlush();
     instance.unmount();
     await instance.waitUntilExit();
   }
 }
 
+/** Renders the same Ink view to a string for snapshots and non-terminal consumers. */
 export function renderInkViewToString(
   view: AgentRunView,
   options: RenderToStringOptions = {},

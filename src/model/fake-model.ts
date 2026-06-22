@@ -5,6 +5,7 @@ export interface FakeModelProviderOptions {
   error?: Error;
 }
 
+/** Deterministic model provider for tests and local smoke runs. */
 export class FakeModelProvider implements ModelProvider {
   readonly chunks: string[];
   readonly error: Error | undefined;
@@ -26,6 +27,7 @@ export class FakeModelProvider implements ModelProvider {
       };
     }
 
+    // Completion mirrors the full text assembled by consumers from the deltas.
     yield {
       type: 'message.completed',
       content: this.chunks.join(''),

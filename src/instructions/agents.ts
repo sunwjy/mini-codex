@@ -2,16 +2,19 @@ import { readFile } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 import { resolveWorkspacePath, toProjectPath } from '../safety/workspace.js';
 
+/** Workspace-relative path and contents of an applicable agent instruction file. */
 export interface AgentInstructionFile {
   path: string;
   content: string;
 }
 
+/** Inputs used to discover inherited agent instructions. */
 export interface LoadAgentInstructionsInput {
   workspaceRoot: string;
   cwd?: string;
 }
 
+/** Loads AGENTS.md files from the workspace root through the current directory. */
 export async function loadAgentInstructions(
   input: LoadAgentInstructionsInput,
 ): Promise<AgentInstructionFile[]> {
@@ -19,6 +22,7 @@ export async function loadAgentInstructions(
   const cwdPath = resolveWorkspacePath(workspaceRoot, input.cwd ?? '.').absolutePath;
   const relativeCwd = relative(workspaceRoot, cwdPath);
   const segments = relativeCwd.length === 0 ? [] : relativeCwd.split(/[\\/]+/);
+  // Parent-first ordering lets consumers apply increasingly specific instructions in sequence.
   const directories = ['.'];
 
   for (let index = 0; index < segments.length; index += 1) {

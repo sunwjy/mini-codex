@@ -36,6 +36,7 @@ export interface InquirerPromptFunctions {
   select<T extends string>(config: InquirerSelectConfig<T>): Promise<T>;
 }
 
+/** Dependencies accepted by the interactive prompt adapter. */
 export interface InquirerInteractionPortOptions {
   output?: {
     write(chunk: string): unknown;
@@ -43,6 +44,7 @@ export interface InquirerInteractionPortOptions {
   prompts?: InquirerPromptFunctions;
 }
 
+/** Interaction adapter backed by Inquirer's terminal prompts. */
 export class InquirerInteractionPort implements InteractionPort {
   readonly output: {
     write(chunk: string): unknown;

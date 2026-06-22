@@ -5,6 +5,7 @@ import type { AgentRenderer } from './types.js';
 
 export type RendererMode = 'auto' | 'plain' | 'tui';
 
+/** Configuration for selecting and constructing a run renderer. */
 export interface CreateRendererInput {
   mode?: RendererMode;
   input?: TtyReadable;
@@ -12,6 +13,7 @@ export interface CreateRendererInput {
   errorOutput?: NodeJS.WriteStream;
 }
 
+/** Creates a renderer, using Ink automatically only when input and output are TTYs. */
 export function createRenderer(input: CreateRendererInput = {}): AgentRenderer {
   const mode = input.mode ?? 'auto';
   const output = input.output ?? process.stdout;

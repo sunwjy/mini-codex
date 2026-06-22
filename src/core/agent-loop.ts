@@ -2,6 +2,7 @@ import type { ModelMessage, ModelProvider } from '../model/types.js';
 import type { JsonlTranscriptStore } from '../transcript/jsonl-store.js';
 import { type AgentEvent, createEvent } from './events.js';
 
+/** Dependencies and deterministic test hooks for an agent loop. */
 export interface AgentLoopOptions {
   model: ModelProvider;
   transcriptStore: JsonlTranscriptStore;
@@ -9,6 +10,7 @@ export interface AgentLoopOptions {
   now?: () => Date;
 }
 
+/** Identifiers and prompts required to execute one agent turn. */
 export interface RunAgentTurnInput {
   threadId: string;
   turnId: string;
@@ -16,11 +18,13 @@ export interface RunAgentTurnInput {
   systemPrompt?: string;
 }
 
+/** The final model response and the ordered events emitted during a turn. */
 export interface RunAgentTurnResult {
   finalMessage: string;
   events: AgentEvent[];
 }
 
+/** Streams a model turn while durably recording its lifecycle events. */
 export class AgentLoop {
   readonly model: ModelProvider;
   readonly transcriptStore: JsonlTranscriptStore;
@@ -39,6 +43,7 @@ export class AgentLoop {
 
     const events: AgentEvent[] = [];
     const append = async (event: AgentEvent): Promise<void> => {
+      // Keep the returned event sequence identical to the durable transcript order.
       events.push(event);
       await this.transcriptStore.append(event);
     };
@@ -71,6 +76,7 @@ export class AgentLoop {
         }
 
         if (streamEvent.type === 'message.completed') {
+          // The completion payload is authoritative if it differs from accumulated deltas.
           finalMessage = streamEvent.content;
         }
       }
@@ -86,6 +92,7 @@ export class AgentLoop {
 
       return { events, finalMessage };
     } catch (error) {
+      // Persist the terminal failure before propagating it to the caller.
       await append(
         this.createEvent({
           data: {

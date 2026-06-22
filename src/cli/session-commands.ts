@@ -3,6 +3,7 @@ import { loadMiniCodexConfig, resolveConfiguredTranscriptDir } from '../config/c
 import { listThreadStatuses, resumeThread } from '../session/index.js';
 import { JsonlTranscriptStore } from '../transcript/jsonl-store.js';
 
+/** Registers commands for inspecting, resuming, and compacting transcript sessions. */
 export function addSessionCommands(program: Command): void {
   program
     .command('status')
@@ -15,6 +16,7 @@ export function addSessionCommands(program: Command): void {
       const store = await createTranscriptStore(options);
       const statuses = await listThreadStatuses(store);
 
+      // JSON mode is machine-readable and bypasses all human-oriented empty-state formatting.
       if (options.json) {
         console.log(JSON.stringify(statuses, null, 2));
         return;
@@ -49,6 +51,7 @@ export function addSessionCommands(program: Command): void {
         threadId,
       });
 
+      // Keep the structured result intact for scripts instead of rendering a prose summary.
       if (options.json) {
         console.log(JSON.stringify(resumed, null, 2));
         return;
@@ -75,6 +78,7 @@ export function addSessionCommands(program: Command): void {
         threadId,
       });
 
+      // Compact JSON output exposes the same data used by the human-readable summary below.
       if (options.json) {
         console.log(JSON.stringify(resumed.compacted, null, 2));
         return;
@@ -109,6 +113,7 @@ async function createTranscriptStore(
   });
 }
 
+/** Parses an optional CLI count while preserving `undefined` as "use the default." */
 function parseOptionalPositiveInteger(
   value: string | undefined,
   label: string,

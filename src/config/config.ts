@@ -3,6 +3,7 @@ import type { RendererMode } from '../render/index.js';
 import { resolveWorkspacePath } from '../safety/workspace.js';
 import type { ShellPolicyDecision } from '../tools/shell.js';
 
+/** Runtime settings loaded from the workspace configuration file. */
 export interface MiniCodexConfig {
   transcriptDir: string;
   renderer: RendererMode;
@@ -16,11 +17,13 @@ export interface MiniCodexConfig {
   };
 }
 
+/** Inputs used to locate a workspace-scoped configuration file. */
 export interface LoadMiniCodexConfigInput {
   workspaceRoot: string;
   configPath?: string;
 }
 
+/** Baseline settings used when a value is omitted or no default config file exists. */
 export const DEFAULT_MINI_CODEX_CONFIG: MiniCodexConfig = {
   compaction: {
     maxEvents: 40,
@@ -34,6 +37,7 @@ export const DEFAULT_MINI_CODEX_CONFIG: MiniCodexConfig = {
   transcriptDir: '.mini-codex/transcripts',
 };
 
+/** Indicates that a configuration file is present but contains invalid settings. */
 export class ConfigError extends Error {
   constructor(message: string) {
     super(message);
@@ -41,6 +45,7 @@ export class ConfigError extends Error {
   }
 }
 
+/** Loads and validates workspace configuration, applying defaults for omitted fields. */
 export async function loadMiniCodexConfig(
   input: LoadMiniCodexConfigInput,
 ): Promise<MiniCodexConfig> {
@@ -51,10 +56,12 @@ export async function loadMiniCodexConfig(
     const raw = JSON.parse(await readFile(absolutePath, 'utf8'));
     return mergeConfig(raw);
   } catch (error) {
+    // A missing conventional config is optional, but a missing explicitly requested file is not.
     if (isNotFoundError(error) && input.configPath === undefined) {
       return DEFAULT_MINI_CODEX_CONFIG;
     }
 
+    // Normalize parser failures so callers do not depend on engine-specific JSON errors.
     if (error instanceof SyntaxError) {
       throw new ConfigError(`${configPath}: invalid JSON`);
     }
@@ -63,6 +70,7 @@ export async function loadMiniCodexConfig(
   }
 }
 
+/** Resolves the configured transcript directory within the workspace boundary. */
 export function resolveConfiguredTranscriptDir(
   workspaceRoot: string,
   transcriptDir: string,
@@ -75,8 +83,10 @@ function mergeConfig(raw: unknown): MiniCodexConfig {
     throw new ConfigError('Config must be a JSON object');
   }
 
+  // Clone nested defaults so callers cannot mutate the shared baseline through the result.
   const config: MiniCodexConfig = structuredClone(DEFAULT_MINI_CODEX_CONFIG);
 
+  // Validate only supplied fields so partial configuration can safely inherit defaults.
   if (raw.transcriptDir !== undefined) {
     if (typeof raw.transcriptDir !== 'string' || raw.transcriptDir.length === 0) {
       throw new ConfigError('transcriptDir must be a non-empty string');
@@ -92,6 +102,7 @@ function mergeConfig(raw: unknown): MiniCodexConfig {
   }
 
   if (raw.compaction !== undefined) {
+    // Reject arrays and primitives before reading nested compaction settings.
     if (!isRecord(raw.compaction)) {
       throw new ConfigError('compaction must be an object');
     }
@@ -105,6 +116,7 @@ function mergeConfig(raw: unknown): MiniCodexConfig {
   }
 
   if (raw.shell !== undefined) {
+    // Nested shell settings follow the same partial-override contract as top-level fields.
     if (!isRecord(raw.shell)) {
       throw new ConfigError('shell must be an object');
     }

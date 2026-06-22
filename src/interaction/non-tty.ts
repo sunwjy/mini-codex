@@ -11,10 +11,17 @@ export interface WritableOutput {
   write(chunk: string): unknown;
 }
 
+/** Configuration for deterministic, non-interactive output. */
 export interface NonTtyInteractionPortOptions {
   output?: WritableOutput;
 }
 
+/**
+ * Interaction adapter for pipelines and redirected output.
+ *
+ * Prompts resolve only when a deterministic answer is available; otherwise they
+ * fail instead of attempting to read from a non-interactive stream.
+ */
 export class NonTtyInteractionPort implements InteractionPort {
   readonly output: WritableOutput;
 
@@ -27,6 +34,7 @@ export class NonTtyInteractionPort implements InteractionPort {
   }
 
   async promptText(prompt: TextPrompt): Promise<string> {
+    // Non-interactive execution can answer only from deterministic prompt metadata.
     if (prompt.defaultValue !== undefined) {
       return prompt.defaultValue;
     }
@@ -35,6 +43,7 @@ export class NonTtyInteractionPort implements InteractionPort {
   }
 
   async confirm(prompt: ConfirmPrompt): Promise<boolean> {
+    // Never invent consent when input is unavailable; require the caller to provide a default.
     if (prompt.defaultValue !== undefined) {
       return prompt.defaultValue;
     }
@@ -43,12 +52,14 @@ export class NonTtyInteractionPort implements InteractionPort {
   }
 
   async select<T extends string>(prompt: SelectPrompt<T>): Promise<T> {
+    // Prefer an explicit default before considering the single-choice fallback below.
     if (prompt.defaultValue !== undefined) {
       return prompt.defaultValue;
     }
 
     const [onlyChoice] = prompt.choices;
 
+    // A single option is deterministic even when the caller omitted a default.
     if (onlyChoice && prompt.choices.length === 1) {
       return onlyChoice.value;
     }
